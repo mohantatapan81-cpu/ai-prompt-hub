@@ -31,7 +31,7 @@ export function Navbar() {
               <Sparkles className="w-5 h-5" />
             </motion.div>
             <span className="font-display font-bold text-xl tracking-wide text-white">
-              AI Prompt Hub
+              Tara AI Prompt Hub
             </span>
           </Link>
 
