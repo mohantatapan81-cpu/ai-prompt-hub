@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'tapankumar9081@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidPost(data) {
+      return data.keys().hasAll(['title', 'category', 'imageUrl', 'createdAt', 'userId', 'status', 'views', 'isTrending', 'isNew']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.category is string && (data.category == 'ai-prompts' || data.category == 'presets' || data.category == 'reels') &&
+             data.imageUrl is string && data.imageUrl.size() <= 2000 &&
+             (data.keys().hasAll(['videoUrl']) == false || (data.videoUrl is string && data.videoUrl.size() <= 2000)) &&
+             data.createdAt == request.time &&
+             data.userId == request.auth.uid &&
+             data.status is string && (data.status == 'draft' || data.status == 'published') &&
+             data.views is number && data.views >= 0 &&
+             data.isTrending is bool &&
+             data.isNew is bool &&
+             (data.keys().hasAll(['promptText']) == false || (data.promptText is string && data.promptText.size() <= 5000));
+    }
+
+    match /posts/{postId} {
+      // Anyone can read posts
+      allow read: if true;
+      allow list: if true;
+
+      allow create: if isAdmin() && isValidId(postId) && isValidPost(incoming());
+      
+      allow update: if (
+        (isAdmin() && incoming().userId == existing().userId && incoming().createdAt == existing().createdAt) || 
+        // Allow public to increment views
+        (incoming().diff(existing()).affectedKeys().hasOnly(['views']) && incoming().views == existing().views + 1)
+      );
+      allow delete: if isAdmin() && isValidId(postId);
+    }
+
+    match /admins/{userId} {
+      allow read: if isAdmin();
+      allow write: if false; // Bootstrapped from console or via tapankumar9081@gmail.com
+    }
+  }
+}

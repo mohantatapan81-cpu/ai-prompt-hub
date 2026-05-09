@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "post": {
+      "title": "Post",
+      "description": "A premium asset like an AI prompt, Lightroom preset, or Reels template.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the post" },
+        "promptText": { "type": "string", "description": "The prompt or description text" },
+        "category": { "type": "string", "description": "Category ID: ai-prompts, presets, or reels" },
+        "imageUrl": { "type": "string", "description": "URL of the uploaded image" },
+        "videoUrl": { "type": "string", "description": "URL of the YouTube video" },
+        "createdAt": { "type": "timestamp" },
+        "userId": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "views": { "type": "number" },
+        "isTrending": { "type": "boolean" },
+        "isNew": { "type": "boolean" }
+      },
+      "required": ["title", "category", "imageUrl", "createdAt", "userId", "status", "views", "isTrending", "isNew"]
+    },
+    "admin": {
+      "title": "Admin",
+      "description": "An admin user",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/post" },
+      "description": "Collection of premium assets"
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/admin" },
+      "description": "Collection of admins"
+    }
+  }
+}
